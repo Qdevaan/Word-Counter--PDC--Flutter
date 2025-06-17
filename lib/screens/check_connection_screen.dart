@@ -2,8 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'upload_files_screen.dart'; 
-
+import 'upload_files_screen.dart';
 
 class CheckConnectionScreen extends StatefulWidget {
   final ValueNotifier<ThemeMode> themeNotifier;
@@ -42,7 +41,6 @@ class _CheckConnectionScreenState extends State<CheckConnectionScreen> {
   Future<void> _checkConnection() async {
     final userInput = _inputController.text.trim();
 
-    // Validate only the last part of IP (e.g., 0.102)
     if (userInput.isEmpty || !RegExp(r'^\d{1,3}(\.\d{1,3})?$').hasMatch(userInput)) {
       setState(() {
         _connectionSuccess = false;
@@ -57,29 +55,32 @@ class _CheckConnectionScreenState extends State<CheckConnectionScreen> {
     });
 
     _startMatrixText();
+    final startTime = DateTime.now();
 
     final fullIp = "192.168.$userInput";
-    final url = "http://$fullIp:8000/ping"; // <-- FIXED: added trailing slash
+    final url = "http://$fullIp:8000/ping";
     _fullUrl = "http://$fullIp:8000";
 
-
+    bool success;
     try {
-      final response =
-          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
-      setState(() {
-        // Accept any 2xx response code
-        _connectionSuccess = response.statusCode >= 200 && response.statusCode < 300;
-      });
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+      success = response.statusCode >= 200 && response.statusCode < 300;
     } catch (_) {
-      setState(() {
-        _connectionSuccess = false;
-      });
-    } finally {
-      _stopMatrixText();
-      setState(() {
-        _checking = false;
-      });
+      success = false;
     }
+
+    final elapsed = DateTime.now().difference(startTime);
+    final remaining = Duration(seconds: 2) - elapsed;
+    if (remaining > Duration.zero) {
+      await Future.delayed(remaining);
+    }
+
+    _stopMatrixText();
+
+    setState(() {
+      _checking = false;
+      _connectionSuccess = success;
+    });
   }
 
   void _resetPopup() {
@@ -133,7 +134,6 @@ class _CheckConnectionScreenState extends State<CheckConnectionScreen> {
               ],
             ),
           ),
-
           if (_connectionSuccess != null)
             Material(
               color: Colors.transparent,
@@ -193,7 +193,7 @@ class _CheckConnectionScreenState extends State<CheckConnectionScreen> {
                               style: theme.textTheme.bodyMedium,
                             ),
                           const SizedBox(height: 15),
-                          if (_connectionSuccess == true) ...[
+                          if (_connectionSuccess == true)
                             ElevatedButton(
                               onPressed: () {
                                 Navigator.push(
@@ -201,14 +201,13 @@ class _CheckConnectionScreenState extends State<CheckConnectionScreen> {
                                   MaterialPageRoute(
                                     builder: (_) => UploadFilesScreen(
                                       themeNotifier: widget.themeNotifier,
-                                      serverUrl: _fullUrl!, // pass the dynamic URL here
+                                      serverUrl: _fullUrl!,
                                     ),
                                   ),
                                 );
                               },
                               child: const Text("Upload Files"),
                             )
-                          ]
                         ],
                       ),
                     ),
