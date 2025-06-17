@@ -41,7 +41,7 @@ class _CheckConnectionScreenState extends State<CheckConnectionScreen> {
   Future<void> _checkConnection() async {
     final userInput = _inputController.text.trim();
 
-    if (userInput.isEmpty || !RegExp(r'^\d{1,3}(\.\d{1,3})?$').hasMatch(userInput)) {
+    if (userInput.isEmpty || !RegExp(r'^(\d{1,3}\.){3}\d{1,3}$').hasMatch(userInput)) {
       setState(() {
         _connectionSuccess = false;
         _fullUrl = null;
@@ -57,9 +57,9 @@ class _CheckConnectionScreenState extends State<CheckConnectionScreen> {
     _startMatrixText();
     final startTime = DateTime.now();
 
-    final fullIp = "192.168.$userInput";
-    final url = "http://$fullIp:8000/ping";
-    _fullUrl = "http://$fullIp:8000";
+    final url = "http://$userInput:8000/ping";
+    _fullUrl = "http://$userInput:8000";
+
 
     bool success;
     try {
@@ -110,13 +110,14 @@ class _CheckConnectionScreenState extends State<CheckConnectionScreen> {
             padding: const EdgeInsets.all(24.0),
             child: Column(
               children: [
-                const Text('Enter the changing part of your local IP (e.g. 0.102):'),
+                const Text('Enter the full local IP address (e.g. 192.168.0.102):'),
                 const SizedBox(height: 10),
                 TextField(
                   controller: _inputController,
-                  decoration: const InputDecoration(
+                    decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    hintText: 'e.g. 0.102 or 1.45',
+                    hintText: 'e.g. 192.168.0.102',
+
                   ),
                   keyboardType: TextInputType.number,
                 ),
