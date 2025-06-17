@@ -1,17 +1,20 @@
-import 'package:flutter/material.dart';
-import 'dart:async';
-import 'dart:math';
+import 'package:flutter/material.dart'; // Import Flutter material design package
+import 'dart:async'; // Import for Timer functionality
+import 'dart:math'; // Import for random number generation
 
+// Define a stateful widget for the About Us screen
 class AboutUsScreen extends StatefulWidget {
-  final ValueNotifier<ThemeMode> themeNotifier;
+  final ValueNotifier<ThemeMode> themeNotifier; // Theme notifier for theme changes
 
-  const AboutUsScreen({super.key, required this.themeNotifier});
+  const AboutUsScreen({super.key, required this.themeNotifier}); // Constructor
 
   @override
-  State<AboutUsScreen> createState() => _AboutUsScreenState();
+  State<AboutUsScreen> createState() => _AboutUsScreenState(); // Create state
 }
 
+// State class for AboutUsScreen
 class _AboutUsScreenState extends State<AboutUsScreen> with SingleTickerProviderStateMixin {
+  // List of team members with their details
   final List<Map<String, String>> members = const [
     {
       'name': 'Abdul Rehman Tariq',
@@ -39,57 +42,60 @@ class _AboutUsScreenState extends State<AboutUsScreen> with SingleTickerProvider
     },
   ];
 
-  int _tapCounter = 0;
-  Timer? _tapResetTimer;
-  bool _showEasterEgg = false;
-  double _opacity = 0.0;
-  List<Offset> _skeletonPositions = [];
+  int _tapCounter = 0; // Counter for taps on Ahmad's card
+  Timer? _tapResetTimer; // Timer to reset tap counter
+  bool _showEasterEgg = false; // Whether to show the easter egg
+  double _opacity = 0.0; // Opacity for fade animation
+  List<Offset> _skeletonPositions = []; // Positions for skeleton images
 
-  final Random _random = Random();
+  final Random _random = Random(); // Random number generator
 
+  // Handle taps on Ahmad's card
   void _handleAhmadCardTap() {
-    _tapCounter++;
+    _tapCounter++; // Increment tap counter
 
-    _tapResetTimer?.cancel();
+    _tapResetTimer?.cancel(); // Cancel previous timer if any
     _tapResetTimer = Timer(const Duration(seconds: 2), () {
-      _tapCounter = 0;
+      _tapCounter = 0; // Reset tap counter after 2 seconds
     });
 
-    if (_tapCounter >= 5) {
-      _tapCounter = 0;
-      _triggerEasterEgg();
+    if (_tapCounter >= 5) { // If tapped 5 times
+      _tapCounter = 0; // Reset counter
+      _triggerEasterEgg(); // Show easter egg
     }
   }
 
+  // Show the easter egg animation
   void _triggerEasterEgg() {
-    final screenSize = MediaQuery.of(context).size;
-    final skeletonCount = 10;
-    List<Offset> positions = [];
+    final screenSize = MediaQuery.of(context).size; // Get screen size
+    final skeletonCount = 10; // Number of skeletons to show
+    List<Offset> positions = []; // List to hold random positions
 
     for (int i = 0; i < skeletonCount; i++) {
-      final dx = _random.nextDouble() * (screenSize.width - 60); // prevent overflow
-      final dy = _random.nextDouble() * (screenSize.height - 150);
-      positions.add(Offset(dx, dy));
+      final dx = _random.nextDouble() * (screenSize.width - 60); // Random x position
+      final dy = _random.nextDouble() * (screenSize.height - 150); // Random y position
+      positions.add(Offset(dx, dy)); // Add position to list
     }
 
     setState(() {
-      _skeletonPositions = positions;
-      _showEasterEgg = true;
-      _opacity = 1.0;
+      _skeletonPositions = positions; // Set skeleton positions
+      _showEasterEgg = true; // Show easter egg
+      _opacity = 1.0; // Set opacity to fully visible
     });
 
-    Timer(const Duration(seconds: 3), () {
-      setState(() => _opacity = 0.0);
+    Timer(const Duration(seconds: 3), () { // After 3 seconds
+      setState(() => _opacity = 0.0); // Fade out
 
       Future.delayed(const Duration(milliseconds: 500), () {
-        setState(() => _showEasterEgg = false);
+        setState(() => _showEasterEgg = false); // Hide easter egg after fade
       });
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.of(context).size.width; // Get screen width
+    // Determine number of columns based on screen width
     final crossAxisCount = screenWidth > 1000
         ? 4
         : screenWidth > 700
@@ -98,19 +104,19 @@ class _AboutUsScreenState extends State<AboutUsScreen> with SingleTickerProvider
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('About Us'),
-        centerTitle: true,
+        title: const Text('About Us'), // App bar title
+        centerTitle: true, // Center the title
       ),
       body: Stack(
         children: [
           // Main content
           SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16), // Padding around content
               child: Column(
                 children: [
                   const Text(
-                    '“We came. We coded. We conquered (after a lot of ChatGPT)😎.”',
+                    '“We came. We coded. We conquered (after a lot of ChatGPT)😎.”', // Team quote
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
@@ -118,40 +124,40 @@ class _AboutUsScreenState extends State<AboutUsScreen> with SingleTickerProvider
                       color: Colors.deepPurple,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 24), // Spacing
                   GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    itemCount: members.length,
+                    physics: const NeverScrollableScrollPhysics(), // Disable grid scrolling
+                    shrinkWrap: true, // Let grid take only needed space
+                    itemCount: members.length, // Number of members
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      mainAxisSpacing: 20,
-                      crossAxisSpacing: 20,
-                      childAspectRatio: 0.75,
+                      crossAxisCount: crossAxisCount, // Columns
+                      mainAxisSpacing: 20, // Vertical spacing
+                      crossAxisSpacing: 20, // Horizontal spacing
+                      childAspectRatio: 0.60, // Card aspect ratio
                     ),
                     itemBuilder: (context, index) {
-                      final member = members[index];
-                      final isAhmad = member['reg'] == 'FA22-BCS-025';
+                      final member = members[index]; // Get member data
+                      final isAhmad = member['reg'] == 'FA22-BCS-025'; // Check if Ahmad
 
                       return GestureDetector(
-                        onTap: isAhmad ? _handleAhmadCardTap : null,
+                        onTap: isAhmad ? _handleAhmadCardTap : null, // Only Ahmad's card is tappable
                         child: Card(
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(16), // Rounded corners
                           ),
-                          elevation: 5,
+                          elevation: 5, // Card shadow
                           child: Padding(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(12), // Padding inside card
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
                                 CircleAvatar(
-                                  radius: 60,
-                                  backgroundImage: AssetImage(member['image']!),
+                                  radius: 60, // Avatar size
+                                  backgroundImage: AssetImage(member['image']!), // Member image
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 12), // Spacing
                                 Text(
-                                  member['name']!,
+                                  member['name']!, // Member name
                                   textAlign: TextAlign.center,
                                   style: Theme.of(context)
                                       .textTheme
@@ -159,12 +165,12 @@ class _AboutUsScreenState extends State<AboutUsScreen> with SingleTickerProvider
                                       ?.copyWith(fontWeight: FontWeight.bold),
                                 ),
                                 Text(
-                                  member['reg']!,
+                                  member['reg']!, // Registration number
                                   style: TextStyle(color: Colors.grey[600]),
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 6), // Spacing
                                 Text(
-                                  "\"${member['quote']}\"",
+                                  "\"${member['quote']}\"", // Member quote
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     fontStyle: FontStyle.italic,
@@ -186,25 +192,25 @@ class _AboutUsScreenState extends State<AboutUsScreen> with SingleTickerProvider
           // Easter Egg with Fade Animation
           if (_showEasterEgg)
             AnimatedOpacity(
-              duration: const Duration(milliseconds: 500),
-              opacity: _opacity,
+              duration: const Duration(milliseconds: 500), // Fade duration
+              opacity: _opacity, // Current opacity
               child: Container(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withOpacity(0.3), // Semi-transparent overlay
                 child: Stack(
                   children: [
                     Center(
                       child: Image.asset(
-                        'assets/logo.png',
+                        'assets/logo.png', // Center logo
                         width: 200,
                         height: 200,
                       ),
                     ),
                     ..._skeletonPositions.map((pos) {
                       return Positioned(
-                        left: pos.dx,
-                        top: pos.dy,
+                        left: pos.dx, // Skeleton x position
+                        top: pos.dy, // Skeleton y position
                         child: Image.asset(
-                          'assets/easteregg/skeleton.png',
+                          'assets/easteregg/skeleton.png', // Skeleton image
                           width: 80,
                           height: 80,
                         ),
