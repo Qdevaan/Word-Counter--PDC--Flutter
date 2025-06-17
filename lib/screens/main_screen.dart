@@ -23,7 +23,6 @@ class _MainScreenState extends State<MainScreen>
       lowerBound: 0.0,
     );
 
-    // Set initial animation position based on current theme
     if (widget.themeNotifier.value == ThemeMode.dark) {
       _controller.value = 1.0;
     } else {
@@ -72,13 +71,52 @@ class _MainScreenState extends State<MainScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset('assets/logo.png', height: 150),
+              // 1️⃣ Enlarged logo
+              Image.asset('assets/logo.png', height: 210),
+              const SizedBox(height: 20),
+
+              // 2️⃣ App name with red V
+              RichText(
+                text: const TextSpan(
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                    color: Colors.black, // fallback
+                  ),
+                  children: [
+                    TextSpan(
+                      text: 'V',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                    TextSpan(
+                      text: 'ord Counter',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // 3️⃣ Cheesy slogan
+              const Text(
+                'Faster than MS Word... in one very specific way.',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 40),
+
+              // 4️⃣ Start button
               ElevatedButton(
                 onPressed: () => Navigator.pushNamed(context, '/check'),
                 child: const Text('Start Application'),
               ),
               const SizedBox(height: 20),
+
+              // 5️⃣ About button
               OutlinedButton(
                 onPressed: () => Navigator.pushNamed(context, '/about'),
                 child: const Text('About Us'),
