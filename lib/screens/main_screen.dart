@@ -47,7 +47,7 @@ class _MainScreenState extends State<MainScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Main Screen"), // App bar title
+        // title: const Text("Main Screen"), // App bar title
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0), // Right padding

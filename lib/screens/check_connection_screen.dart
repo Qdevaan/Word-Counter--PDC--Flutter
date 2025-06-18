@@ -117,7 +117,7 @@ class _CheckConnectionScreenState extends State<CheckConnectionScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Check Connection')),
+      appBar: AppBar(title: const Text('Establish Connection')),
       body: Stack(
         alignment: Alignment.center,
         children: [
