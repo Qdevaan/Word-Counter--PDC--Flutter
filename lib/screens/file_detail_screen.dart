@@ -1,41 +1,35 @@
-import 'package:flutter/material.dart'; // Import Flutter material design package
-import 'package:fl_chart/fl_chart.dart'; // Import fl_chart for chart widgets
+import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 
-// Stateful widget to display file details
 class FileDetailScreen extends StatefulWidget {
-  final Map<String, dynamic> fileData; // File data passed to the screen
+  final Map<String, dynamic> fileData;
 
-  const FileDetailScreen({super.key, required this.fileData}); // Constructor
+  const FileDetailScreen({super.key, required this.fileData});
 
   @override
-  State<FileDetailScreen> createState() => _FileDetailScreenState(); // Create state
+  State<FileDetailScreen> createState() => _FileDetailScreenState();
 }
 
-// State class for FileDetailScreen
 class _FileDetailScreenState extends State<FileDetailScreen> {
-  late List<MapEntry<String, dynamic>> sortedWords; // List of word/count pairs
-  bool sortAsc = true; // Sorting order: ascending or descending
-  int sortColumnIndex = 0; // Which column to sort by: 0=Word, 1=Count
+  late List<MapEntry<String, dynamic>> sortedWords;
+  bool sortAsc = true;
+  int sortColumnIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    // Initialize sortedWords from fileData's 'all_words' map
     sortedWords = Map<String, dynamic>.from(widget.fileData['all_words'] ?? {})
         .entries
         .toList();
-    sortData(); // Sort the data initially
+    sortData();
   }
 
-  // Sort the sortedWords list based on current sort settings
   void sortData() {
     setState(() {
       if (sortColumnIndex == 0) {
-        // Sort by word (key)
         sortedWords.sort((a, b) =>
             sortAsc ? a.key.compareTo(b.key) : b.key.compareTo(a.key));
       } else {
-        // Sort by count (value)
         sortedWords.sort((a, b) =>
             sortAsc ? a.value.compareTo(b.value) : b.value.compareTo(a.value));
       }
@@ -44,7 +38,6 @@ class _FileDetailScreenState extends State<FileDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Extract file details from fileData
     final String filename = widget.fileData['filename'] ?? "Unknown";
     final String type = widget.fileData['content_type'] ?? "Unknown";
     final int size = widget.fileData['size_bytes'] ?? 0;
@@ -52,55 +45,59 @@ class _FileDetailScreenState extends State<FileDetailScreen> {
     final double time =
         (widget.fileData['processing_time_seconds'] ?? 0.0).toDouble();
 
-    // Get top 10 words for the bar chart
     final topWords = List<Map<String, dynamic>>.from(
         widget.fileData['top_10_words'] ?? []);
-    // Find the maximum count for Y axis
     final double maxY = topWords
         .map((w) => (w['count'] ?? 0).toDouble())
         .fold(0.0, (a, b) => a > b ? a : b);
-    // Calculate interval for Y axis labels
     final double interval = (maxY / 5).ceilToDouble();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tableHeaderStyle = TextStyle(
+      fontWeight: FontWeight.bold,
+      color: Theme.of(context).colorScheme.primary,
+    );
+
     return Scaffold(
-      appBar: AppBar(title: Text(filename)), // App bar with filename
+      appBar: AppBar(title: Text(filename)),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16), // Add padding
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, // Align left
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Display file info chips
             Wrap(
               spacing: 12,
               runSpacing: 8,
               children: [
-                _infoChip("Type", type), // File type
-                _infoChip("Size", "$size bytes"), // File size
-                _infoChip("Words", "$totalWords"), // Word count
-                _infoChip("Time", "${time.toStringAsFixed(3)} s"), // Processing time
+                _infoChip("Type", type),
+                _infoChip("Size", "$size bytes"),
+                _infoChip("Words", "$totalWords"),
+                _infoChip("Time", "${time.toStringAsFixed(3)} s"),
               ],
             ),
-            const SizedBox(height: 24), // Spacing
-            const Text("Top 10 Words",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), // Section title
-            const SizedBox(height: 12), // Spacing
+            const SizedBox(height: 24),
+            Text("Top 10 Words",
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    )),
+            const SizedBox(height: 12),
             SizedBox(
-              height: 300, // Chart height
+              height: 300,
               child: BarChart(
                 BarChartData(
-                  maxY: maxY + interval, // Set Y axis max
+                  maxY: maxY + interval,
                   barGroups: topWords.asMap().entries.map((entry) {
-                    final index = entry.key; // Bar index
-                    final wordData = entry.value; // Word/count map
+                    final index = entry.key;
+                    final wordData = entry.value;
                     return BarChartGroupData(
-                      x: index, // X position
+                      x: index,
                       barRods: [
                         BarChartRodData(
-                          toY: (wordData['count'] ?? 0).toDouble(), // Bar height
+                          toY: (wordData['count'] ?? 0).toDouble(),
                           color: Colors.primaries[
-                              index % Colors.primaries.length], // Bar color
-                          width: 12, // Bar width
-                          borderRadius: BorderRadius.circular(4), // Rounded corners
+                              index % Colors.primaries.length],
+                          width: 12,
+                          borderRadius: BorderRadius.circular(4),
                         )
                       ],
                     );
@@ -108,82 +105,116 @@ class _FileDetailScreenState extends State<FileDetailScreen> {
                   titlesData: FlTitlesData(
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
-                        showTitles: true, // Show X axis titles
-                        reservedSize: 60, // Space for titles
-                        interval: 1, // Show every bar
+                        showTitles: true,
+                        reservedSize: 60,
+                        interval: 1,
                         getTitlesWidget: (value, _) {
                           final index = value.toInt();
                           if (index >= 0 && index < topWords.length) {
                             return Transform.rotate(
-                              angle: -0.5, // Rotate label
-                              child: Text(topWords[index]['word'],
-                                  style: const TextStyle(fontSize: 10)),
+                              angle: -0.5,
+                              child: Text(
+                                topWords[index]['word'],
+                                style: const TextStyle(fontSize: 10),
+                              ),
                             );
                           } else {
-                            return const SizedBox.shrink(); // Empty if out of range
+                            return const SizedBox.shrink();
                           }
                         },
                       ),
                     ),
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
-                        showTitles: true, // Show Y axis titles
-                        interval: interval, // Interval for Y labels
+                        showTitles: true,
+                        interval: interval,
                         getTitlesWidget: (value, _) => Text(
                             value.toInt().toString(),
                             style: const TextStyle(fontSize: 10)),
-                        reservedSize: 32, // Space for Y labels
+                        reservedSize: 32,
                       ),
                     ),
                     topTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)), // No top titles
+                        sideTitles: SideTitles(showTitles: false)),
                     rightTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)), // No right titles
+                        sideTitles: SideTitles(showTitles: false)),
                   ),
-                  gridData: FlGridData(show: false), // Hide grid lines
-                  borderData: FlBorderData(show: false), // Hide border
+                  gridData: FlGridData(show: false),
+                  borderData: FlBorderData(show: false),
                 ),
               ),
             ),
-            const SizedBox(height: 24), // Spacing
-            const Text("All Words",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), // Section title
-            const SizedBox(height: 12), // Spacing
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal, // Allow horizontal scroll
-              child: DataTable(
-                sortAscending: sortAsc, // Current sort order
-                sortColumnIndex: sortColumnIndex, // Current sort column
-                columns: [
-                  DataColumn(
-                    label: const Text("Word"), // Column label
-                    onSort: (columnIndex, ascending) {
-                      sortColumnIndex = columnIndex; // Set sort column
-                      sortAsc = ascending; // Set sort order
-                      sortData(); // Sort data
-                    },
+            const SizedBox(height: 24),
+            Text("All Words",
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    )),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                double totalWidth = constraints.maxWidth;
+                double wordColumnWidth = totalWidth * 0.6;
+                double countColumnWidth = totalWidth * 0.4;
+
+                return ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: totalWidth),
+                  child: DataTable(
+                    sortAscending: sortAsc,
+                    sortColumnIndex: sortColumnIndex,
+                    columnSpacing: 12,
+                    columns: [
+                      DataColumn(
+                        label: SizedBox(
+                          width: wordColumnWidth,
+                          child: Text("Word", style: tableHeaderStyle),
+                        ),
+                        onSort: (columnIndex, ascending) {
+                          setState(() {
+                            sortColumnIndex = columnIndex;
+                            sortAsc = ascending;
+                            sortData();
+                          });
+                        },
+                      ),
+                      DataColumn(
+                        label: SizedBox(
+                          width: countColumnWidth,
+                          child: Text("Count", style: tableHeaderStyle),
+                        ),
+                        numeric: true,
+                        onSort: (columnIndex, ascending) {
+                          setState(() {
+                            sortColumnIndex = columnIndex;
+                            sortAsc = ascending;
+                            sortData();
+                          });
+                        },
+                      ),
+                    ],
+                    rows: sortedWords.map((entry) {
+                      return DataRow(cells: [
+                        DataCell(SizedBox(
+                            width: wordColumnWidth, child: Text(entry.key))),
+                        DataCell(SizedBox(
+                            width: countColumnWidth,
+                            child: Text(entry.value.toString()))),
+                      ]);
+                    }).toList(),
+                    headingRowColor: MaterialStateProperty.resolveWith<Color?>(
+                        (states) => isDark
+                            ? Colors.grey.shade800
+                            : Colors.grey.shade300),
+                    dataRowColor: MaterialStateProperty.resolveWith<Color?>(
+                        (states) => isDark
+                            ? Colors.grey.shade900
+                            : Colors.grey.shade100),
+                    dividerThickness: 0.5,
+                    headingRowHeight: 36,
+                    dataRowMinHeight: 32,
+                    dataRowMaxHeight: 36,
                   ),
-                  DataColumn(
-                    label: const Text("Count"), // Column label
-                    numeric: true, // Numeric column
-                    onSort: (columnIndex, ascending) {
-                      sortColumnIndex = columnIndex; // Set sort column
-                      sortAsc = ascending; // Set sort order
-                      sortData(); // Sort data
-                    },
-                  ),
-                ],
-                rows: sortedWords.map((entry) {
-                  return DataRow(cells: [
-                    DataCell(Text(entry.key)), // Word cell
-                    DataCell(Text(entry.value.toString())), // Count cell
-                  ]);
-                }).toList(),
-                headingRowHeight: 32, // Header row height
-                dataRowMinHeight: 28, // Min data row height
-                dataRowMaxHeight: 32, // Max data row height
-                dividerThickness: 0.3, // Divider thickness
-              ),
+                );
+              },
             ),
           ],
         ),
@@ -191,11 +222,13 @@ class _FileDetailScreenState extends State<FileDetailScreen> {
     );
   }
 
-  // Helper widget to display info as a chip
   Widget _infoChip(String label, String value) {
     return Chip(
-      label: Text("$label: $value"), // Chip label
-      backgroundColor: Colors.blue.shade50, // Chip background color
+      label: Text("$label: $value"),
+      backgroundColor: Theme.of(context).chipTheme.backgroundColor ??
+          (Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey.shade800
+              : Colors.blue.shade50),
     );
   }
 }

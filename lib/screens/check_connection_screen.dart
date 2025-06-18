@@ -76,13 +76,9 @@ class _CheckConnectionScreenState extends State<CheckConnectionScreen> {
       final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
-        try {
-          final json = jsonDecode(response.body);
-          success = json['message'] == 'pong';
-        } catch (_) {
-          // Not JSON, but still 200
-          success = _connectionType == 'Ngrok';
-        }
+        final json = jsonDecode(response.body);
+        final msg = json['message']?.toString().toLowerCase();
+        success = ['pong', 'server is alive!', 'connection ok', 'connection successful'].contains(msg);
       }
     } catch (e) {
       success = false;
@@ -150,7 +146,7 @@ class _CheckConnectionScreenState extends State<CheckConnectionScreen> {
                 Text(
                   _connectionType == 'Local IP'
                       ? 'Enter the full local IP address (e.g. 192.168.0.102):'
-                      : 'Enter your full Ngrok domain (e.g. abc123.ngrok.io or abc123.ngrok-free.app):',
+                      : 'Enter your full Ngrok domain (e.g. abc123.ngrok.io):',
                 ),
                 const SizedBox(height: 5),
                 if (_connectionType == 'Local IP')
@@ -167,7 +163,6 @@ class _CheckConnectionScreenState extends State<CheckConnectionScreen> {
                         ? 'e.g. 192.168.0.102'
                         : 'e.g. abc123.ngrok-free.app',
                   ),
-                  keyboardType: TextInputType.text,
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
