@@ -79,22 +79,26 @@ class _MainScreenState extends State<MainScreen>
               Image.asset('assets/logo.png', height: 210), // App logo
               const SizedBox(height: 20), // Spacing
 
-              // 2️⃣ App name with red V
+              // 2️⃣ App name with red V and dynamic text color
               RichText(
-                text: const TextSpan(
-                  style: TextStyle(
+                text: TextSpan(
+                  style: const TextStyle(
                     fontSize: 28, // Font size
                     fontWeight: FontWeight.bold, // Bold text
                     letterSpacing: 1.2, // Letter spacing
-                    color: Colors.black, // fallback color
                   ),
                   children: [
-                    TextSpan(
+                    const TextSpan(
                       text: 'V', // Red 'V'
                       style: TextStyle(color: Colors.red),
                     ),
                     TextSpan(
                       text: 'ord Counter', // Rest of the name
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black,
+                      ),
                     ),
                   ],
                 ),

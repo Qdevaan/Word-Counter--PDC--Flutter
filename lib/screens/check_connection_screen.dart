@@ -1,170 +1,203 @@
-import 'dart:async'; // Import for Timer and asynchronous operations
-import 'dart:math'; // Import for generating random numbers
-import 'package:flutter/material.dart'; // Flutter UI toolkit
-import 'package:http/http.dart' as http; // HTTP requests package
-import 'upload_files_screen.dart'; // Import the UploadFilesScreen widget
+import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'upload_files_screen.dart';
 
-// Stateful widget for checking server connection
 class CheckConnectionScreen extends StatefulWidget {
-  final ValueNotifier<ThemeMode> themeNotifier; // Theme notifier for theme changes
+  final ValueNotifier<ThemeMode> themeNotifier;
 
-  const CheckConnectionScreen({super.key, required this.themeNotifier}); // Constructor
+  const CheckConnectionScreen({super.key, required this.themeNotifier});
 
   @override
-  State<CheckConnectionScreen> createState() => _CheckConnectionScreenState(); // Create state
+  State<CheckConnectionScreen> createState() => _CheckConnectionScreenState();
 }
 
-// State class for CheckConnectionScreen
 class _CheckConnectionScreenState extends State<CheckConnectionScreen> {
-  final TextEditingController _inputController = TextEditingController(); // Controller for IP input field
-  bool _checking = false; // Indicates if connection check is in progress
-  bool? _connectionSuccess; // Stores result of connection check
-  String? _fullUrl; // Stores the full server URL
+  final TextEditingController _inputController = TextEditingController();
+  bool _checking = false;
+  bool? _connectionSuccess;
+  String? _fullUrl;
+  String _connectionType = 'Local IP';
 
-  Timer? _matrixTimer; // Timer for matrix text animation
-  String _matrixText = ""; // Animated matrix text
+  Timer? _matrixTimer;
+  String _matrixText = "";
 
-  // Starts the matrix text animation
   void _startMatrixText() {
     _matrixTimer = Timer.periodic(const Duration(milliseconds: 120), (timer) {
       setState(() {
-        _matrixText =
-            List.generate(10, (_) => Random().nextBool() ? '1' : '0').join(' '); // Generate random 1s and 0s
+        _matrixText = List.generate(10, (_) => Random().nextBool() ? '1' : '0').join(' ');
       });
     });
   }
 
-  // Stops the matrix text animation
   void _stopMatrixText() {
-    _matrixTimer?.cancel(); // Cancel the timer if running
+    _matrixTimer?.cancel();
     setState(() {
-      _matrixText = ""; // Clear the matrix text
+      _matrixText = "";
     });
   }
 
-  // Checks the connection to the server
   Future<void> _checkConnection() async {
-    final userInput = _inputController.text.trim(); // Get trimmed input
+    final userInput = _inputController.text.trim();
 
-    // Validate IP address format
+    // Validate input
     if (userInput.isEmpty ||
-        !RegExp(r'^(\d{1,3}\.){3}\d{1,3}$').hasMatch(userInput)) {
+        (_connectionType == 'Local IP' &&
+            !RegExp(r'^(\d{1,3}\.){3}\d{1,3}$').hasMatch(userInput)) ||
+        (_connectionType == 'Ngrok' &&
+            !RegExp(r'^[\w.-]+\.(ngrok\.io|ngrok-free\.app)$').hasMatch(userInput))) {
       setState(() {
-        _connectionSuccess = false; // Set connection as failed
-        _fullUrl = null; // Clear URL
+        _connectionSuccess = false;
+        _fullUrl = null;
       });
-      return; // Exit function
+      return;
     }
 
     setState(() {
-      _checking = true; // Set checking flag
-      _connectionSuccess = null; // Reset connection result
+      _checking = true;
+      _connectionSuccess = null;
     });
 
-    _startMatrixText(); // Start matrix animation
-    final startTime = DateTime.now(); // Record start time
+    _startMatrixText();
+    final startTime = DateTime.now();
 
-    final url = "http://$userInput:8000/ping"; // Construct ping URL
-    _fullUrl = "http://$userInput:8000"; // Store base URL
+    final url = _connectionType == 'Local IP'
+        ? "http://$userInput:8000/ping"
+        : "https://$userInput/ping";
 
-    bool success; // Variable to store success status
+    _fullUrl = _connectionType == 'Local IP'
+        ? "http://$userInput:8000"
+        : "https://$userInput";
+
+    bool success = false;
     try {
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5)); // Send GET request with timeout
-      success = response.statusCode >= 200 && response.statusCode < 300; // Check for successful status code
-    } catch (_) {
-      success = false; // Set as failed on error
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        try {
+          final json = jsonDecode(response.body);
+          success = json['message'] == 'pong';
+        } catch (_) {
+          // Not JSON, but still 200
+          success = _connectionType == 'Ngrok';
+        }
+      }
+    } catch (e) {
+      success = false;
     }
 
-    final elapsed = DateTime.now().difference(startTime); // Calculate elapsed time
-    final remaining = Duration(seconds: 2) - elapsed; // Ensure minimum 2 seconds for UX
+    final elapsed = DateTime.now().difference(startTime);
+    final remaining = Duration(seconds: 2) - elapsed;
     if (remaining > Duration.zero) {
-      await Future.delayed(remaining); // Wait if needed
+      await Future.delayed(remaining);
     }
 
-    _stopMatrixText(); // Stop matrix animation
+    _stopMatrixText();
 
     setState(() {
-      _checking = false; // Reset checking flag
-      _connectionSuccess = success; // Set connection result
+      _checking = false;
+      _connectionSuccess = success;
     });
   }
 
-  // Resets the popup dialog state
   void _resetPopup() {
     setState(() {
-      _connectionSuccess = null; // Reset connection result
-      _fullUrl = null; // Clear URL
+      _connectionSuccess = null;
+      _fullUrl = null;
     });
   }
 
-  // Dispose controllers and timers
   @override
   void dispose() {
-    _stopMatrixText(); // Stop animation timer
-    _inputController.dispose(); // Dispose text controller
-    super.dispose(); // Call superclass dispose
+    _stopMatrixText();
+    _inputController.dispose();
+    super.dispose();
   }
 
-  // Builds the widget tree
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context); // Get current theme
+    final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Check Connection')), // App bar title
+      appBar: AppBar(title: const Text('Check Connection')),
       body: Stack(
-        alignment: Alignment.center, // Center stack children
+        alignment: Alignment.center,
         children: [
           Padding(
-            padding: const EdgeInsets.all(24.0), // Outer padding
+            padding: const EdgeInsets.all(24.0),
             child: Column(
               children: [
-                const Text('Enter the full local IP address (e.g. 192.168.0.102):'), // Instruction text
-                const SizedBox(height: 5), // Spacing
-                const Text(
-                  'Make sure that you and your server are on the same network.',
-                  style: TextStyle(fontSize: 13, color: Colors.grey), // Sub-instruction
+                const Text('Select connection type:'),
+                const SizedBox(height: 10),
+                DropdownButton<String>(
+                  value: _connectionType,
+                  items: const [
+                    DropdownMenuItem(value: 'Local IP', child: Text('Local IP')),
+                    DropdownMenuItem(value: 'Ngrok', child: Text('Ngrok')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _connectionType = value!;
+                      _inputController.clear();
+                      _connectionSuccess = null;
+                      _fullUrl = null;
+                    });
+                  },
                 ),
-                const SizedBox(height: 10), // Spacing
-                TextField(
-                  controller: _inputController, // Input controller
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(), // Input border
-                    hintText: 'e.g. 192.168.0.102', // Placeholder text
+                const SizedBox(height: 10),
+                Text(
+                  _connectionType == 'Local IP'
+                      ? 'Enter the full local IP address (e.g. 192.168.0.102):'
+                      : 'Enter your full Ngrok domain (e.g. abc123.ngrok.io or abc123.ngrok-free.app):',
+                ),
+                const SizedBox(height: 5),
+                if (_connectionType == 'Local IP')
+                  const Text(
+                    'Make sure that you and your server are on the same network.',
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
                   ),
-                  keyboardType: TextInputType.number, // Numeric keyboard
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _inputController,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    hintText: _connectionType == 'Local IP'
+                        ? 'e.g. 192.168.0.102'
+                        : 'e.g. abc123.ngrok-free.app',
+                  ),
+                  keyboardType: TextInputType.text,
                 ),
-                const SizedBox(height: 20), // Spacing
+                const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: (_checking || _connectionSuccess == true)
-                      ? null // Disable if checking or already successful
-                      : _checkConnection, // Otherwise, check connection
+                  onPressed: (_checking || _connectionSuccess == true) ? null : _checkConnection,
                   child: _checking
                       ? Text(
-                          _matrixText, // Show matrix animation while checking
+                          _matrixText,
                           style: const TextStyle(fontFamily: 'Courier', fontSize: 16),
                         )
-                      : const Text('Check Connection'), // Button label
+                      : const Text('Check Connection'),
                 ),
               ],
             ),
           ),
-          if (_connectionSuccess != null) // Show popup if result is available
+          if (_connectionSuccess != null)
             Material(
-              color: Colors.transparent, // Transparent background
-              elevation: 30, // Popup elevation
+              color: Colors.transparent,
+              elevation: 30,
               child: Container(
                 width: 280,
                 height: 280,
-                padding: const EdgeInsets.all(20), // Inner padding
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: theme.cardColor, // Card color from theme
-                  borderRadius: BorderRadius.circular(20), // Rounded corners
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3), // Shadow color
-                      blurRadius: 30, // Shadow blur
-                      offset: const Offset(0, 12), // Shadow offset
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 30,
+                      offset: const Offset(0, 12),
                     ),
                   ],
                 ),
@@ -174,40 +207,39 @@ class _CheckConnectionScreenState extends State<CheckConnectionScreen> {
                       right: 0,
                       top: 0,
                       child: IconButton(
-                        icon: Icon(Icons.close, color: theme.iconTheme.color), // Close icon
-                        onPressed: _resetPopup, // Reset popup on close
+                        icon: Icon(Icons.close, color: theme.iconTheme.color),
+                        onPressed: _resetPopup,
                       ),
                     ),
                     Center(
                       child: Column(
-                        mainAxisSize: MainAxisSize.min, // Minimize vertical space
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _connectionSuccess! ? Icons.check_circle : Icons.cancel, // Success or fail icon
-                            color: _connectionSuccess! ? Colors.green : Colors.red, // Icon color
-                            size: 60, // Icon size
+                            _connectionSuccess! ? Icons.check_circle : Icons.cancel,
+                            color: _connectionSuccess! ? Colors.green : Colors.red,
+                            size: 60,
                           ),
-                          const SizedBox(height: 12), // Spacing
+                          const SizedBox(height: 12),
                           Text(
                             _connectionSuccess!
-                                ? 'Connection successful!' // Success message
-                                : 'Connection failed!', // Failure message
+                                ? 'Connection successful!'
+                                : 'Connection failed!',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 18,
-                              color:
-                                  _connectionSuccess! ? Colors.green : Colors.red, // Text color
+                              color: _connectionSuccess! ? Colors.green : Colors.red,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 10), // Spacing
+                          const SizedBox(height: 10),
                           if (_fullUrl != null)
                             Text(
-                              _fullUrl!, // Show server URL
+                              _fullUrl!,
                               textAlign: TextAlign.center,
                               style: theme.textTheme.bodyMedium,
                             ),
-                          const SizedBox(height: 15), // Spacing
+                          const SizedBox(height: 15),
                           if (_connectionSuccess == true)
                             ElevatedButton(
                               onPressed: () {
@@ -215,13 +247,13 @@ class _CheckConnectionScreenState extends State<CheckConnectionScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => UploadFilesScreen(
-                                      themeNotifier: widget.themeNotifier, // Pass theme notifier
-                                      serverUrl: _fullUrl!, // Pass server URL
+                                      themeNotifier: widget.themeNotifier,
+                                      serverUrl: _fullUrl!,
                                     ),
                                   ),
                                 );
                               },
-                              child: const Text("Upload Files"), // Button label
+                              child: const Text("Upload Files"),
                             )
                         ],
                       ),
